@@ -1,0 +1,17 @@
+{
+    "name": null,
+    "input_variables": [
+        "explanation_input",
+        "length_input",
+        "research_input"
+    ],
+    "optional_variables": [],
+    "output_parser": null,
+    "partial_variables": {},
+    "metadata": null,
+    "tags": null,
+    "template": "Summarize this research paper {research_input} with type {explanation_input} and length inpurt {length_input}",
+    "template_format": "f-string",
+    "validate_template": true,
+    "_type": "prompt"
+}
