@@ -1,0 +1,156 @@
+RETRIEVAL-AUGMENTED GENERATION (RAG)
+======================================
+
+1. WHAT IS RAG?
+----------------
+RAG (Retrieval-Augmented Generation) is a technique that combines a
+retrieval system with a generative language model (LLM) to produce
+more accurate, up-to-date, and context-grounded responses.
+
+Instead of relying purely on what an LLM learned during training
+(which can be outdated or incomplete), RAG retrieves relevant
+external information at query time and feeds it to the LLM as
+context before generating an answer.
+
+In short:
+    RAG = Retrieval System + LLM
+
+2. WHY RAG?
+-----------
+LLMs on their own have three key limitations:
+  - Knowledge cutoff: they don't know about events/data after training.
+  - Hallucination: they can generate plausible-sounding but false info.
+  - No access to private/domain-specific data (e.g., a company's
+    internal docs, a user's own files).
+
+RAG solves this by grounding the model's response in real,
+retrievable data — reducing hallucination and enabling the model to
+answer questions about custom/private/recent content it was never
+trained on.
+
+3. HOW RAG WORKS (HIGH-LEVEL PIPELINE)
+---------------------------------------
+Step 1: Ingest & Chunk
+    - Take source documents (PDFs, docs, web pages, DB records, etc.)
+    - Split them into smaller chunks (e.g., 500-1000 tokens each)
+      since embedding models and LLM context windows have limits.
+
+Step 2: Embed
+    - Convert each chunk into a vector embedding (a numeric
+      representation capturing semantic meaning) using an embedding
+      model (e.g., OpenAI embeddings, Sentence-Transformers, etc.)
+
+Step 3: Store
+    - Store these embeddings in a vector database (e.g., Pinecone,
+      Weaviate, Chroma, FAISS, Milvus, pgvector).
+
+Step 4: Retrieve
+    - When a user asks a question, embed the query the same way.
+    - Perform a similarity search (e.g., cosine similarity) against
+      the vector store to find the top-k most relevant chunks.
+
+Step 5: Augment
+    - Insert the retrieved chunks into the LLM's prompt as context,
+      typically structured like:
+        "Answer the question using only the following context:
+         {retrieved_chunks}
+         Question: {user_query}"
+
+Step 6: Generate
+    - The LLM generates a response grounded in the retrieved context,
+      rather than relying solely on its internal parametric knowledge.
+
+4. KEY COMPONENTS
+------------------
+- Document Loader   -> Reads raw data (PDF, CSV, web, DB, etc.)
+- Text Splitter     -> Breaks documents into manageable chunks
+- Embedding Model    -> Converts text into vector representations
+- Vector Store       -> Stores & indexes embeddings for fast search
+- Retriever          -> Fetches relevant chunks for a given query
+- LLM                -> Generates the final answer using retrieved context
+
+5. TYPES OF RETRIEVAL
+-----------------------
+- Dense Retrieval: Uses embeddings + vector similarity search
+  (most common in RAG).
+- Sparse Retrieval: Traditional keyword-based search (e.g., BM25,
+  TF-IDF) — good for exact term matches.
+- Hybrid Retrieval: Combines dense + sparse for better accuracy.
+- Re-ranking: A secondary model re-scores retrieved chunks for
+  relevance before passing to the LLM (improves precision).
+
+6. COMMON RAG ARCHITECTURES
+-----------------------------
+- Naive RAG: Simple retrieve-then-generate pipeline (as above).
+- Advanced RAG: Adds query rewriting, re-ranking, filtering, and
+  multi-step retrieval to improve relevance.
+- Agentic RAG: An LLM agent decides dynamically whether/what/how
+  many times to retrieve, and can chain multiple retrieval steps
+  or tools together.
+- Graph RAG: Uses knowledge graphs instead of (or alongside) vector
+  stores to capture relationships between entities.
+
+7. EXAMPLE (CONCEPTUAL, LANGCHAIN-STYLE)
+-------------------------------------------
+    from langchain_community.document_loaders import PyPDFLoader
+    from langchain.text_splitter import RecursiveCharacterTextSplitter
+    from langchain_community.vectorstores import FAISS
+    from langchain_openai import OpenAIEmbeddings, ChatOpenAI
+    from langchain.chains import RetrievalQA
+
+    # 1. Load documents
+    loader = PyPDFLoader("my_document.pdf")
+    docs = loader.load()
+
+    # 2. Split into chunks
+    splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
+    chunks = splitter.split_documents(docs)
+
+    # 3. Embed and store
+    embeddings = OpenAIEmbeddings()
+    vectorstore = FAISS.from_documents(chunks, embeddings)
+
+    # 4. Create retriever
+    retriever = vectorstore.as_retriever(search_kwargs={"k": 4})
+
+    # 5. Build RAG chain
+    llm = ChatOpenAI(model="gpt-4")
+    qa_chain = RetrievalQA.from_chain_type(llm=llm, retriever=retriever)
+
+    # 6. Ask a question
+    response = qa_chain.invoke("What is the main topic of this document?")
+    print(response)
+
+8. COMMON USE CASES
+----------------------
+- Enterprise chatbots answering questions from internal docs/wikis.
+- Customer support bots grounded in product documentation.
+- Legal/medical Q&A systems referencing specific case law or papers.
+- Coding assistants referencing a specific codebase.
+- Personal knowledge assistants (notes, PDFs, emails).
+
+9. CHALLENGES / THINGS TO WATCH FOR
+---------------------------------------
+- Chunking strategy affects retrieval quality (too small = loses
+  context, too large = irrelevant noise).
+- Embedding model choice matters (domain-specific vs general-purpose).
+- Retrieval can still miss relevant info (recall problems) — hence
+  re-ranking and hybrid search are often added.
+- Context window limits: too many retrieved chunks can exceed the
+  LLM's token limit.
+- Latency: multiple retrieval + generation steps add response time.
+
+10. QUICK INTERVIEW-STYLE SUMMARY
+-------------------------------------
+Q: What is RAG?
+A: RAG is a technique that augments an LLM's generation process by
+   retrieving relevant external documents/context at query time
+   (usually via vector similarity search) and injecting them into
+   the prompt, so the model can produce more accurate, grounded, and
+   up-to-date answers without needing to be retrained.
+
+Q: Why use RAG instead of fine-tuning?
+A: Fine-tuning bakes knowledge into model weights (expensive, static,
+   hard to update). RAG keeps the LLM frozen and updates only the
+   external knowledge source (cheap, dynamic, easy to refresh) —
+   making it ideal for frequently changing or private data.
