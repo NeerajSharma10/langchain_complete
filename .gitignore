@@ -12,3 +12,9 @@ __pycache__/
 # Local IDE configuration
 .vscode/
 .idea/
+
+.env
+venv/
+__pycache__/
+*.pyc
+faiss_index/
