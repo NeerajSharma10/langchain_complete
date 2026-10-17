@@ -1,9 +1,17 @@
 {
   "manifest_version": 3,
-  "name": "YouTube Chat",
-  "version": "1.0",
-  "description": "Ask questions about the YouTube video you're watching.",
-  "action": { "default_popup": "popup.html" },
-  "permissions": ["activeTab"],
-  "host_permissions": ["http://localhost:8000/*"]
+  "name": "Ask this video",
+  "version": "1.0.0",
+  "description": "Ask questions about the YouTube video you are watching.",
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Ask this video"
+  },
+  "permissions": [
+    "activeTab"
+  ],
+  "host_permissions": [
+    "https://www.youtube.com/*",
+    "http://127.0.0.1:8000/*"
+  ]
 }

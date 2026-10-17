@@ -1,19 +1,114 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <title>Ask this video</title>
   <style>
-    body { width: 340px; font-family: sans-serif; padding: 12px; }
-    textarea { width: 100%; box-sizing: border-box; height: 60px; }
-    button { margin-top: 8px; padding: 6px 12px; cursor: pointer; }
-    #answer { margin-top: 12px; white-space: pre-wrap; }
+    :root {
+      --bg: #fafafb;
+      --surface: #ffffff;
+      --ink: #1a2233;
+      --muted: #5f6b7d;
+      --line: #dde1e8;
+      --accent: #c8102e;
+      --accent-ink: #ffffff;
+      --error: #a3141f;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #161a22;
+        --surface: #1e232d;
+        --ink: #eceff4;
+        --muted: #9aa5b6;
+        --line: #333b49;
+        --accent: #e5384f;
+        --accent-ink: #ffffff;
+        --error: #ff8a93;
+      }
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      width: 360px;
+      margin: 0;
+      padding: 16px;
+      background: var(--bg);
+      color: var(--ink);
+      font: 14px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    }
+
+    h1 {
+      margin: 0 0 2px;
+      font-size: 17px;
+      font-weight: 650;
+      letter-spacing: -0.01em;
+    }
+
+    #video {
+      margin: 0 0 14px;
+      color: var(--muted);
+      font-size: 13px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 64px;
+      padding: 10px 12px;
+      resize: vertical;
+      color: var(--ink);
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      font: inherit;
+    }
+    textarea:focus-visible,
+    button:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+    textarea:disabled { opacity: 0.6; }
+
+    button {
+      margin-top: 8px;
+      width: 100%;
+      padding: 9px 12px;
+      color: var(--accent-ink);
+      background: var(--accent);
+      border: 0;
+      border-radius: 6px;
+      font: inherit;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    #result {
+      margin-top: 14px;
+      padding: 2px 0 2px 12px;
+      border-left: 3px solid var(--accent);
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      max-height: 280px;
+      overflow-y: auto;
+    }
+    #result.status { border-left-color: var(--line); color: var(--muted); }
+    #result.error { border-left-color: var(--error); color: var(--error); }
+    #result[hidden] { display: none; }
   </style>
 </head>
 <body>
-  <h3>Chat with this video</h3>
-  <textarea id="question" placeholder="Ask something about the video..."></textarea>
-  <button id="askBtn">Ask</button>
-  <div id="answer"></div>
+  <h1>Ask this video</h1>
+  <p id="video">Checking the current tab...</p>
+
+  <textarea id="question" placeholder="What is this video about?" disabled></textarea>
+  <button id="ask" disabled>Ask</button>
+
+  <div id="result" hidden></div>
+
   <script src="popup.js"></script>
 </body>
 </html>

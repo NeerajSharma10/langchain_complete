@@ -7,7 +7,8 @@ from pydantic import BaseModel
 
 from youtube_transcript_api import YouTubeTranscriptApi
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_huggingface import HuggingFaceEmbeddings, HuggingFaceEndpoint, ChatHuggingFace
+from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_groq import ChatGroq
 from langchain_community.vectorstores import FAISS
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
@@ -27,14 +28,14 @@ embeddings = HuggingFaceEmbeddings(
     model_kwargs={"device": "cpu"},
     encode_kwargs={"normalize_embeddings": True},
 )
-llm = ChatHuggingFace(
-    llm=HuggingFaceEndpoint(
-        repo_id="meta-llama/Llama-3.1-8B-Instruct",
-        task="text-generation",
-        max_new_tokens=512,
-        temperature=0.2,
-    )
+
+# Reads GROQ_API_KEY from the environment (.env)
+llm = ChatGroq(
+    model="openai/gpt-oss-120b",
+    temperature=0.2,
+    max_tokens=2048,
 )
+
 splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
 
 prompt = ChatPromptTemplate.from_template(
@@ -47,10 +48,13 @@ Context:
 Question: {question}"""
 )
 
+
 def format_docs(docs):
     return "\n\n".join(d.page_content for d in docs)
 
+
 chain_cache = {}  # video_id -> rag_chain, so each video is embedded only once
+
 
 def get_chain(video_id: str):
     if video_id in chain_cache:
@@ -69,9 +73,11 @@ def get_chain(video_id: str):
     chain_cache[video_id] = chain
     return chain
 
+
 class AskRequest(BaseModel):
     video_id: str
     question: str
+
 
 @app.post("/ask")
 def ask(req: AskRequest):
@@ -79,3 +85,8 @@ def ask(req: AskRequest):
         return {"answer": get_chain(req.video_id).invoke(req.question)}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="127.0.0.1", port=8000)
